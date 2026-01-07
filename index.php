@@ -9,6 +9,7 @@
         body { background-color: #f8f9fa; padding-top: 20px; }
         .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; }
         .card-header { background-color: #0d6efd; color: white; font-weight: bold; }
+        .card-header.geo { background-color: #198754; } /* Cor verde para Geo */
         .table-hover tbody tr:hover { background-color: #f1f1f1; }
         pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
         .info-value { word-break: break-all; }
@@ -16,12 +17,36 @@
 </head>
 <body>
 
+<?php
+// --- Lógica de Geolocalização (Server-Side) ---
+
+function getUserIP() {
+    // Prioriza headers de proxy confiáveis para pegar o IP real
+    if (!empty($_SERVER['HTTP_X_REAL_IP'])) return $_SERVER['HTTP_X_REAL_IP'];
+    if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
+    if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
+        // Pode retornar lista de IPs, pega o primeiro
+        $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
+        return trim($ipList[0]);
+    }
+    return $_SERVER['REMOTE_ADDR'];
+}
+
+$userIP = getUserIP();
+// Timeout curto para não travar o carregamento da página se a API demorar
+$context = stream_context_create(['http' => ['timeout' => 3]]); 
+$geoApiUrl = "http://ip-api.com/json/{$userIP}?lang=pt-BR&fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query,mobile,proxy,hosting";
+$geoJson = @file_get_contents($geoApiUrl, false, $context);
+$geoData = $geoJson ? json_decode($geoJson, true) : null;
+?>
+
 <div class="container">
     <div class="text-center mb-5">
         <h1 class="display-5">Dados de Acesso e Navegador</h1>
-        <p class="lead">Informações coletadas via PHP (Server-Side) e JavaScript (Client-Side)</p>
+        <p class="lead">Informações coletadas via PHP (Server-Side), API Externa e JavaScript (Client-Side)</p>
         <div class="mb-3">
             <div class="badge bg-secondary">PHP Version: <?php echo phpversion(); ?></div>
+            <div class="badge bg-success">IP Detectado: <?php echo $userIP; ?></div>
         </div>
         <button id="btn-send-email" class="btn btn-primary btn-lg">
             📧 Enviar Relatório por E-mail
@@ -30,42 +55,56 @@
     </div>
 
     <div class="row">
-        <!-- Coluna da Esquerda: Dados Principais -->
+        <!-- Coluna da Esquerda -->
         <div class="col-lg-6">
             
+            <!-- Dados de Geolocalização -->
+            <div class="card">
+                <div class="card-header geo">🌍 Geolocalização (IP-API)</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped table-hover mb-0">
+                        <tbody>
+                            <?php if ($geoData && $geoData['status'] == 'success'): ?>
+                                <tr><th>País</th><td class="info-value"><?php echo $geoData['country'] . " (" . $geoData['countryCode'] . ")"; ?></td></tr>
+                                <tr><th>Região/Estado</th><td class="info-value"><?php echo $geoData['regionName']; ?></td></tr>
+                                <tr><th>Cidade</th><td class="info-value"><?php echo $geoData['city']; ?></td></tr>
+                                <tr><th>Fuso Horário (ISP)</th><td class="info-value"><?php echo $geoData['timezone']; ?></td></tr>
+                                <tr><th>Provedor (ISP)</th><td class="info-value"><?php echo $geoData['isp']; ?></td></tr>
+                                <tr><th>Organização</th><td class="info-value"><?php echo $geoData['org']; ?></td></tr>
+                                <tr><th>Latitude/Longitude</th><td class="info-value"><?php echo $geoData['lat'] . ", " . $geoData['lon']; ?></td></tr>
+                                <tr><th>Conexão Móvel?</th><td class="info-value"><?php echo $geoData['mobile'] ? 'Sim' : 'Não'; ?></td></tr>
+                                <tr><th>Proxy/VPN?</th><td class="info-value"><?php echo $geoData['proxy'] ? 'Sim' : 'Não'; ?></td></tr>
+                            <?php else: ?>
+                                <tr><td colspan="2" class="text-center text-danger">Não foi possível obter dados de geolocalização.</td></tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
             <!-- Dados do Cliente via PHP -->
             <div class="card">
                 <div class="card-header">📍 Identificação Básica (PHP)</div>
                 <div class="card-body p-0">
                     <table class="table table-striped table-hover mb-0">
                         <tbody>
-                            <tr>
-                                <th>Endereço IP</th>
-                                <td class="info-value"><?php echo $_SERVER['REMOTE_ADDR'] ?? 'N/A'; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Porta Remota</th>
-                                <td class="info-value"><?php echo $_SERVER['REMOTE_PORT'] ?? 'N/A'; ?></td>
-                            </tr>
-                            <tr>
-                                <th>Método de Requisição</th>
-                                <td class="info-value"><span class="badge bg-success"><?php echo $_SERVER['REQUEST_METHOD'] ?? 'N/A'; ?></span></td>
-                            </tr>
-                            <tr>
-                                <th>Protocolo</th>
-                                <td class="info-value"><?php echo $_SERVER['SERVER_PROTOCOL'] ?? 'N/A'; ?></td>
-                            </tr>
-                            <tr>
-                                <th>User Agent (Raw)</th>
-                                <td class="info-value small"><?php echo $_SERVER['HTTP_USER_AGENT'] ?? 'N/A'; ?></td>
-                            </tr>
+                            <tr><th>Endereço IP (Remoto)</th><td class="info-value"><?php echo $_SERVER['REMOTE_ADDR'] ?? 'N/A'; ?></td></tr>
+                            <tr><th>Porta Remota</th><td class="info-value"><?php echo $_SERVER['REMOTE_PORT'] ?? 'N/A'; ?></td></tr>
+                            <tr><th>Método de Requisição</th><td class="info-value"><span class="badge bg-success"><?php echo $_SERVER['REQUEST_METHOD'] ?? 'N/A'; ?></span></td></tr>
+                            <tr><th>Protocolo</th><td class="info-value"><?php echo $_SERVER['SERVER_PROTOCOL'] ?? 'N/A'; ?></td></tr>
+                            <tr><th>User Agent</th><td class="info-value small"><?php echo $_SERVER['HTTP_USER_AGENT'] ?? 'N/A'; ?></td></tr>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Dados do Cliente via JS -->
-            <div class="card">
+        </div>
+
+        <!-- Coluna da Direita -->
+        <div class="col-lg-6">
+            
+             <!-- Dados do Cliente via JS -->
+             <div class="card">
                 <div class="card-header">🖥️ Dados do Dispositivo (JavaScript)</div>
                 <div class="card-body p-0">
                     <table class="table table-striped table-hover mb-0" id="js-data-table">
@@ -76,26 +115,15 @@
                 </div>
             </div>
 
-        </div>
-
-        <!-- Coluna da Direita: Headers e Globais -->
-        <div class="col-lg-6">
-            
             <!-- Headers HTTP -->
             <div class="card">
                 <div class="card-header">📨 Cabeçalhos da Requisição (Headers)</div>
                 <div class="card-body p-0">
                     <table class="table table-sm table-striped mb-0">
-                        <thead>
-                            <tr>
-                                <th>Chave</th>
-                                <th>Valor</th>
-                            </tr>
-                        </thead>
+                        <thead><tr><th>Chave</th><th>Valor</th></tr></thead>
                         <tbody>
                             <?php
                             $headers = function_exists('getallheaders') ? getallheaders() : [];
-                            // Fallback para servidores que não suportam getallheaders (ex: nginx com fpm em alguns casos, embora apache suporte)
                             if (empty($headers)) {
                                 foreach ($_SERVER as $name => $value) {
                                     if (substr($name, 0, 5) == 'HTTP_') {
@@ -103,33 +131,32 @@
                                     }
                                 }
                             }
-                            
                             foreach ($headers as $key => $value): ?>
-                                <tr>
-                                    <td><?php echo htmlspecialchars($key); ?></td>
-                                    <td class="info-value small"><?php echo htmlspecialchars($value); ?></td>
-                                </tr>
+                                <tr><td><?php echo htmlspecialchars($key); ?></td><td class="info-value small"><?php echo htmlspecialchars($value); ?></td></tr>
                             <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Dump Completo $_SERVER -->
-            <div class="card">
-                <div class="card-header">⚙️ Variável $_SERVER Completa</div>
-                <div class="card-body">
-                    <p class="card-text small text-muted">Use isso para ver variáveis de ambiente específicas do servidor.</p>
-                    <pre><?php print_r($_SERVER); ?></pre>
-                </div>
-            </div>
-
         </div>
     </div>
+    
+    <!-- Dump Completo $_SERVER (Oculto por padrão, expansível) -->
+    <div class="card mt-3">
+        <div class="card-header bg-dark text-white" style="cursor: pointer;" onclick="document.getElementById('server-dump').classList.toggle('d-none')">
+            ⚙️ Variável $_SERVER Completa (Clique para expandir)
+        </div>
+        <div class="card-body d-none" id="server-dump">
+            <pre><?php print_r($_SERVER); ?></pre>
+        </div>
+    </div>
+
 </div>
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
+        // Dados coletados via JS
         const jsData = [
             { label: "Resolução da Tela", value: window.screen.width + " x " + window.screen.height },
             { label: "Área Disponível", value: window.screen.availWidth + " x " + window.screen.availHeight },
@@ -140,37 +167,39 @@
             { label: "Idiomas Suportados", value: navigator.languages ? navigator.languages.join(", ") : "N/A" },
             { label: "Plataforma", value: navigator.platform },
             { label: "Cookies Ativados", value: navigator.cookieEnabled ? "Sim" : "Não" },
-            { label: "Cores do Navegador", value: navigator.userAgentData ? "N/A" : navigator.vendor }, // Fallback simples
             { label: "Memória do Dispositivo (aprox.)", value: navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Não disponível" },
             { label: "Cores do Sistema", value: window.matchMedia('(prefers-color-scheme: dark)').matches ? "Dark Mode" : "Light Mode" },
             { label: "Conexão (Network API)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" }
         ];
 
+        // Renderizar Tabela JS
         const tbody = document.querySelector("#js-data-table tbody");
         tbody.innerHTML = "";
-
         jsData.forEach(item => {
             const tr = document.createElement("tr");
             tr.innerHTML = `<th>${item.label}</th><td class="info-value">${item.value}</td>`;
             tbody.appendChild(tr);
         });
 
+        // Passar dados PHP (Geo) para JS
+        const serverGeoData = <?php echo json_encode($geoData); ?>;
+
         // Lógica de Envio de E-mail
         const btnSend = document.getElementById('btn-send-email');
         const statusDiv = document.getElementById('email-status');
 
         btnSend.addEventListener('click', function() {
-            // Desativar botão e mostrar loading
             btnSend.disabled = true;
             btnSend.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
             statusDiv.innerHTML = '';
 
             fetch('send_mail.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ clientData: jsData })
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    clientData: jsData,
+                    geoData: serverGeoData // Inclui os dados de Geo coletados pelo PHP
+                })
             })
             .then(response => response.json())
             .then(data => {
@@ -184,7 +213,6 @@
                 statusDiv.innerHTML = `<div class="alert alert-danger d-inline-block">Erro de conexão: ${error}</div>`;
             })
             .finally(() => {
-                // Restaurar botão
                 btnSend.disabled = false;
                 btnSend.innerHTML = '📧 Enviar Relatório por E-mail';
             });
