@@ -29,11 +29,11 @@ O **seeNavdata** foi criado para auxiliar desenvolvedores a entenderem quais dad
 ### Instalação
 1. Clone este repositório para o diretório raiz do seu servidor (ex: `/var/www/html/`):
    ```bash
-   git clone https://github.com/seu-usuario/seeNavdata.git
+   git clone https://github.com/juniojose/seeNavdata.git
    ```
 2. Acesse via navegador:
    ```
-   http://localhost/seeNavdata
+   http://<domain>/seeNavdata
    ```
 
 ## 🛠️ Tecnologias Utilizadas
