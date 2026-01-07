@@ -217,9 +217,36 @@ $results = $stmtList->execute();
                         display.innerHTML += createCard('🌍 Geolocalização', geoArray, 'bg-success');
                     }
 
-                    // 2. Dados Combinados do Cliente (JS + Fingerprint)
+                    // 2. Dados do Cliente (Separar Fingerprint de Dados Básicos)
                     if (raw.clientData) {
-                        display.innerHTML += createCard('🖥️ Dados do Dispositivo & Fingerprint', raw.clientData, 'bg-primary');
+                        const fpLabels = [
+                            "CPU Cores (Núcleos)", 
+                            "Max Touch Points", 
+                            "GPU Vendor (WebGL)", 
+                            "GPU Renderer (WebGL)", 
+                            "Canvas Hash (Assinatura)"
+                        ];
+
+                        const fpItems = [];
+                        const basicItems = [];
+
+                        raw.clientData.forEach(item => {
+                            if (fpLabels.includes(item.label)) {
+                                fpItems.push(item);
+                            } else {
+                                basicItems.push(item);
+                            }
+                        });
+
+                        // Exibir Card Amarelo (Fingerprint)
+                        if (fpItems.length > 0) {
+                            display.innerHTML += createCard('🕵️ Fingerprinting Avançado', fpItems, 'bg-warning text-dark');
+                        }
+
+                        // Exibir Card Azul (Dados Básicos JS)
+                        if (basicItems.length > 0) {
+                            display.innerHTML += createCard('🖥️ Dados do Dispositivo (JavaScript)', basicItems, 'bg-primary');
+                        }
                     }
 
                     // 3. Dados do Contexto PHP (Novo)
