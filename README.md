@@ -27,8 +27,13 @@ A lightweight and modern diagnostic tool developed in **PHP 8.2**, designed to c
     - **Hardware Specs:** CPU core count and touch point support.
 - **📊 Analytics Dashboard:**
     - **SQLite Database:** Automatic persistence of all access logs.
-    - **Bot Farm Detection:** Algorithmic identification of suspicious devices (e.g., Brazilian IP with Chinese timezone).
-    - **Visual Interface:** Filter logs by date range and view suspicious activity metrics.
+    - **Advanced Bot Farm Detection:** Heuristic engine that analyzes multiple risk factors:
+        - **Timezone Mismatch:** Brazilian IP with Asian system timezone.
+        - **Automation Flags:** `navigator.webdriver` enabled.
+        - **Power Anomaly:** Mobile devices with 100% battery and charging (Farm behavior).
+        - **Fake Environment:** Inconsistencies between User-Agent (e.g., Android) and Platform (e.g., Win32).
+        - **Software Rendering:** Usage of VM/Emulator graphics (SwiftShader, llvmpipe).
+    - **Visual Interface:** Filter logs by date range, view suspicious activity metrics, and inspect full JSON payloads.
 
 ## 🚀 How to Run
 
