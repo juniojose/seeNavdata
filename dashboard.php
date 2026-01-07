@@ -143,17 +143,18 @@ $results = $stmtList->execute();
     </div>
 </div>
 
-<!-- Modal para Visualização de Dados Brutos -->
+<!-- Modal para Visualização de Dados Formatados -->
 <div class="modal fade" id="rawUpdateModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title">🔍 Detalhes Completos da Extração</h5>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">🔍 Detalhes da Extração (Raio-X)</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-                <p class="text-muted small">Abaixo estão todos os dados capturados (Client-Side e Server-Side) em formato JSON.</p>
-                <pre id="raw-json-display" class="bg-light p-3 border rounded" style="max-height: 500px; overflow-y: auto; font-size: 0.85rem;"></pre>
+            <div class="modal-body bg-light">
+                <div id="formatted-display" class="row">
+                    <!-- Conteúdo gerado dinamicamente aqui -->
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
@@ -166,17 +167,60 @@ $results = $stmtList->execute();
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const modal = new bootstrap.Modal(document.getElementById('rawUpdateModal'));
-        const display = document.getElementById('raw-json-display');
+        const display = document.getElementById('formatted-display');
+
+        function createCard(title, dataArray, colorClass = 'bg-primary') {
+            let rows = dataArray.map(item => `
+                <tr>
+                    <th style="width: 40%; font-size: 0.9rem;">${item.label || item.key}</th>
+                    <td class="text-break" style="font-size: 0.9rem;">${item.value}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="col-md-6 mb-3">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header ${colorClass} text-white fw-bold">${title}</div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-striped mb-0">
+                                <tbody>${rows}</tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
 
         document.querySelectorAll('.btn-view-raw').forEach(btn => {
             btn.addEventListener('click', function() {
                 try {
-                    const rawData = JSON.parse(this.getAttribute('data-raw'));
-                    // Formatar JSON com 4 espaços de indentação
-                    display.textContent = JSON.stringify(rawData, null, 4);
+                    const raw = JSON.parse(this.getAttribute('data-raw'));
+                    display.innerHTML = ''; // Limpar
+
+                    // 1. Geolocalização
+                    if (raw.geoData && raw.geoData.status === 'success') {
+                        const geo = raw.geoData;
+                        const geoArray = [
+                            {label: 'País', value: `${geo.country} (${geo.countryCode})`},
+                            {label: 'Região', value: geo.regionName},
+                            {label: 'Cidade', value: geo.city},
+                            {label: 'Provedor', value: geo.isp},
+                            {label: 'Timezone (IP)', value: geo.timezone},
+                            {label: 'Mobile', value: geo.mobile ? 'Sim' : 'Não'},
+                            {label: 'Proxy/VPN', value: geo.proxy ? 'Sim' : 'Não'}
+                        ];
+                        display.innerHTML += createCard('🌍 Geolocalização', geoArray, 'bg-success');
+                    }
+
+                    // 2. Dados Combinados do Cliente (JS + Fingerprint)
+                    if (raw.clientData) {
+                        display.innerHTML += createCard('🖥️ Dados do Dispositivo & Fingerprint', raw.clientData, 'bg-primary');
+                    }
+
                     modal.show();
                 } catch (e) {
-                    alert('Erro ao processar dados: ' + e.message);
+                    console.error(e);
+                    alert('Erro ao processar dados.');
                 }
             });
         });
