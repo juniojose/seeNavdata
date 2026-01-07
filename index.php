@@ -20,7 +20,13 @@
     <div class="text-center mb-5">
         <h1 class="display-5">Dados de Acesso e Navegador</h1>
         <p class="lead">Informações coletadas via PHP (Server-Side) e JavaScript (Client-Side)</p>
-        <div class="badge bg-secondary">PHP Version: <?php echo phpversion(); ?></div>
+        <div class="mb-3">
+            <div class="badge bg-secondary">PHP Version: <?php echo phpversion(); ?></div>
+        </div>
+        <button id="btn-send-email" class="btn btn-primary btn-lg">
+            📧 Enviar Relatório por E-mail
+        </button>
+        <div id="email-status" class="mt-2"></div>
     </div>
 
     <div class="row">
@@ -147,6 +153,41 @@
             const tr = document.createElement("tr");
             tr.innerHTML = `<th>${item.label}</th><td class="info-value">${item.value}</td>`;
             tbody.appendChild(tr);
+        });
+
+        // Lógica de Envio de E-mail
+        const btnSend = document.getElementById('btn-send-email');
+        const statusDiv = document.getElementById('email-status');
+
+        btnSend.addEventListener('click', function() {
+            // Desativar botão e mostrar loading
+            btnSend.disabled = true;
+            btnSend.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
+            statusDiv.innerHTML = '';
+
+            fetch('send_mail.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ clientData: jsData })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    statusDiv.innerHTML = `<div class="alert alert-success d-inline-block">${data.message}</div>`;
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger d-inline-block">${data.message}</div>`;
+                }
+            })
+            .catch(error => {
+                statusDiv.innerHTML = `<div class="alert alert-danger d-inline-block">Erro de conexão: ${error}</div>`;
+            })
+            .finally(() => {
+                // Restaurar botão
+                btnSend.disabled = false;
+                btnSend.innerHTML = '📧 Enviar Relatório por E-mail';
+            });
         });
     });
 </script>

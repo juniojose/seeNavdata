@@ -1,0 +1,15 @@
+<?php
+/**
+ * Exemplo de configuração de E-mail (SMTP)
+ * Renomeie este arquivo para config.php e preencha com seus dados reais.
+ * O arquivo config.php está listado no .gitignore para evitar o vazamento de credenciais.
+ */
+
+define('SMTP_HOST', 'mail.exemplo.com.br');
+define('SMTP_PORT', 465);
+define('SMTP_USER', 'seu-email@exemplo.com.br');
+define('SMTP_PASS', 'sua-senha-aqui');
+define('SMTP_SECURE', 'ssl'); // Pode ser 'ssl' ou 'tls'
+define('SMTP_FROM_EMAIL', 'seu-email@exemplo.com.br');
+define('SMTP_FROM_NAME', 'Nome da Sua Empresa');
+define('EMAIL_TO', 'destino@exemplo.com.br');
