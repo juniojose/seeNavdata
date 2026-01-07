@@ -18,10 +18,10 @@ $geoData = $input['geoData'] ?? [];
 function getClientValue($data, $labelStart) {
     foreach ($data as $item) {
         if (strpos($item['label'], $labelStart) !== false) {
-            return $item['value'];
+            return trim($item['value']); // Adicionado trim()
         }
     }
-    return ''; // Retorna vazio se não achar, para facilitar verificação
+    return '';
 }
 
 // --- Extração de Dados ---
@@ -45,43 +45,47 @@ $countryGeo = $geoData['country'] ?? 'N/A';
 $isp = $geoData['isp'] ?? 'N/A';
 $isMobile = isset($geoData['mobile']) && $geoData['mobile'] ? 1 : 0;
 
-// --- MOTOR DE DETECÇÃO DE BOT FARM (Heurística) ---
-$flags = []; // Lista de motivos para suspeita
+// --- MOTOR DE DETECÇÃO DE BOT FARM (Heurística Robusta) ---
+$flags = []; 
 
 // 1. Verificação de Automação Explícita
 if (strpos($webdriver, 'DETECTADO') !== false || strpos(strtolower($webdriver), 'true') !== false) {
     $flags[] = "Navegador reportou navigator.webdriver = true";
 }
 
-// 2. Verificação de Timezone (Padrão TV Box China)
-if ($countryGeo == 'Brazil' && $timezoneJS == 'Asia/Shanghai') {
-    $flags[] = "IP Brasileiro com Fuso Horário da China (Asia/Shanghai)";
+// 2. Verificação de Timezone (Padrão TV Box China) - CORRIGIDO
+// Verifica se país contém 'brazil'/'brasil' E fuso contém 'Asia' ou 'Shanghai'
+$countryLower = strtolower($countryGeo);
+$tzLower = strtolower($timezoneJS);
+
+if ((strpos($countryLower, 'brazil') !== false || strpos($countryLower, 'brasil') !== false) && 
+    (strpos($tzLower, 'asia') !== false || strpos($tzLower, 'shanghai') !== false)) {
+    $flags[] = "IP Brasileiro ($countryGeo) com Fuso Horário Asiático ($timezoneJS)";
 }
 
 // 3. Verificação de WebGL (Renderizadores de Software/Emuladores)
-$softwareRenderers = ['SwiftShader', 'llvmpipe', 'VirtualBox', 'VMware', 'Mesa OffScreen'];
+$softwareRenderers = ['SwiftShader', 'llvmpipe', 'VirtualBox', 'VMware', 'Mesa OffScreen', 'Android Emulator'];
 foreach ($softwareRenderers as $soft) {
-    if (strpos($webglRenderer, $soft) !== false) {
-        $flags[] = "Renderizador WebGL de Software/VM detectado: $soft";
+    if (stripos($webglRenderer, $soft) !== false) { // Usando stripos para case-insensitive
+        $flags[] = "Renderizador WebGL de Software/VM detectado: $webglRenderer";
         break;
     }
 }
 
 // 4. Verificação de Bateria (Padrão Farm: Sempre 100% e na tomada)
-// Nota: Apenas consideramos se for mobile, pois desktops sempre estão "na tomada" ou sem bateria.
 if ($isMobile && $batteryLevel == '100%' && ($batteryCharging == 'Sim' || $batteryCharging == 'true')) {
     $flags[] = "Comportamento de Farm: Mobile com 100% de bateria e carregando";
 }
 
 // 5. User Agent Headless
-if (strpos(strtolower($ua), 'headless') !== false) {
+if (stripos($ua, 'headless') !== false) {
     $flags[] = "User-Agent contém 'Headless'";
 }
 
 // 6. Inconsistência de Plataforma (Emulador vs Real)
 // Ex: UserAgent diz "Android", mas Plataforma diz "Win32" (Emulador rodando no Windows)
 if (stripos($ua, 'Android') !== false && stripos($platformJS, 'Win') !== false) {
-    $flags[] = "Inconsistência: User-Agent Android rodando em Plataforma Windows (Emulador)";
+    $flags[] = "Inconsistência: User-Agent Android rodando em Plataforma Windows ($platformJS)";
 }
 
 // 7. Resolução Anômala (Janelas Headless minúsculas)
