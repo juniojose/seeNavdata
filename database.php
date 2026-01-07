@@ -6,6 +6,13 @@ class Database {
         try {
             // Cria ou abre o arquivo do banco de dados
             $this->db = new SQLite3('navdata.db');
+            
+            // --- Configurações de Concorrência ---
+            // Espera até 20 segundos se o banco estiver travado (escrita simultânea)
+            $this->db->busyTimeout(20000);
+            // Ativa modo WAL (Melhora performance e permite leitura/escrita simultânea)
+            $this->db->exec('PRAGMA journal_mode = WAL;');
+            
             $this->initialize();
         } catch (Exception $e) {
             die("Erro ao conectar ao SQLite: " . $e->getMessage());
