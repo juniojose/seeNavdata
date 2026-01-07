@@ -98,6 +98,18 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
                 </div>
             </div>
 
+            <!-- Fingerprinting Avançado -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">🕵️ Fingerprinting Avançado</div>
+                <div class="card-body p-0">
+                    <table class="table table-striped table-hover mb-0" id="fp-data-table">
+                        <tbody>
+                            <tr><td colspan="2" class="text-center p-3"><div class="spinner-border text-warning" role="status"></div><br>Gerando assinatura digital...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
 
         <!-- Coluna da Direita -->
@@ -155,8 +167,51 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
 </div>
 
 <script>
+    // Funções de Fingerprinting
+    function getCanvasFingerprint() {
+        try {
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+            var txt = 'seeNavdata-fingerprint-v1';
+            ctx.textBaseline = "top";
+            ctx.font = "14px 'Arial'";
+            ctx.textBaseline = "alphabetic";
+            ctx.fillStyle = "#f60";
+            ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = "#069";
+            ctx.fillText(txt, 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
+            ctx.fillText(txt, 4, 17);
+            
+            // Gerar hash simples da string base64 (CRC like)
+            var str = canvas.toDataURL();
+            var hash = 0;
+            if (str.length === 0) return 'N/A';
+            for (var i = 0; i < str.length; i++) {
+                var char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash.toString(16); // Hex
+        } catch(e) { return "Erro: " + e.message; }
+    }
+
+    function getWebGLInfo() {
+        try {
+            var canvas = document.createElement('canvas');
+            var gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+            if (!gl) return { vendor: 'N/A', renderer: 'N/A' };
+            var debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+            if (!debugInfo) return { vendor: 'N/A', renderer: 'N/A' };
+            return {
+                vendor: gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL),
+                renderer: gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL)
+            };
+        } catch(e) { return { vendor: 'Erro', renderer: e.message }; }
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
-        // Dados coletados via JS
+        // Dados do Navegador
         const jsData = [
             { label: "Resolução da Tela", value: window.screen.width + " x " + window.screen.height },
             { label: "Área Disponível", value: window.screen.availWidth + " x " + window.screen.availHeight },
@@ -172,13 +227,32 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             { label: "Conexão (Network API)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" }
         ];
 
-        // Renderizar Tabela JS
-        const tbody = document.querySelector("#js-data-table tbody");
-        tbody.innerHTML = "";
+        // Dados de Fingerprinting
+        const webGL = getWebGLInfo();
+        const fpData = [
+            { label: "CPU Cores (Núcleos)", value: navigator.hardwareConcurrency || 'N/A' },
+            { label: "Max Touch Points", value: navigator.maxTouchPoints || 0 },
+            { label: "GPU Vendor (WebGL)", value: webGL.vendor },
+            { label: "GPU Renderer (WebGL)", value: webGL.renderer },
+            { label: "Canvas Hash (Assinatura)", value: getCanvasFingerprint() }
+        ];
+
+        // Renderizar Tabela JS (Básico)
+        const tbodyJS = document.querySelector("#js-data-table tbody");
+        tbodyJS.innerHTML = "";
         jsData.forEach(item => {
             const tr = document.createElement("tr");
             tr.innerHTML = `<th>${item.label}</th><td class="info-value">${item.value}</td>`;
-            tbody.appendChild(tr);
+            tbodyJS.appendChild(tr);
+        });
+
+        // Renderizar Tabela Fingerprint
+        const tbodyFP = document.querySelector("#fp-data-table tbody");
+        tbodyFP.innerHTML = "";
+        fpData.forEach(item => {
+            const tr = document.createElement("tr");
+            tr.innerHTML = `<th>${item.label}</th><td class="info-value fw-bold text-dark">${item.value}</td>`;
+            tbodyFP.appendChild(tr);
         });
 
         // Passar dados PHP (Geo) para JS
@@ -193,12 +267,15 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             btnSend.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
             statusDiv.innerHTML = '';
 
+            // Combinar todos os dados de cliente
+            const allClientData = jsData.concat(fpData);
+
             fetch('send_mail.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    clientData: jsData,
-                    geoData: serverGeoData // Inclui os dados de Geo coletados pelo PHP
+                    clientData: allClientData, // Envia JS Básico + Fingerprint juntos
+                    geoData: serverGeoData 
                 })
             })
             .then(response => response.json())
