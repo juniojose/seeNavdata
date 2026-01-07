@@ -23,7 +23,7 @@ $stats = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
 // Consulta Lista de Acessos
 $listQuery = "SELECT * FROM visits 
               WHERE date(created_at) BETWEEN :start AND :end 
-              ORDER BY created_at DESC LIMIT 100";
+              ORDER BY canvas_hash ASC, created_at DESC LIMIT 100";
 $stmtList = $db->prepare($listQuery);
 $stmtList->bindValue(':start', $startDate);
 $stmtList->bindValue(':end', $endDate);
@@ -128,7 +128,7 @@ $results = $stmtList->execute();
                             <?php if($row['timezone_js'] != $row['timezone_geo'] && $row['timezone_geo'] != 'N/A') echo '<br><small class="text-muted">IP: '.$row['timezone_geo'].'</small>'; ?>
                         </td>
                         <td class="small"><?php echo $row['platform']; ?></td>
-                        <td class="small text-monospace"><?php echo substr($row['canvas_hash'], 0, 10); ?>...</td>
+                        <td class="small text-monospace" style="font-size: 0.8em; word-break: break-all;"><?php echo $row['canvas_hash']; ?></td>
                         <td><?php echo $statusBadge; ?></td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary btn-view-raw" data-raw='<?php echo $safeRawData; ?>'>
