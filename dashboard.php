@@ -217,6 +217,21 @@ $results = $stmtList->execute();
                         display.innerHTML += createCard('🖥️ Dados do Dispositivo & Fingerprint', raw.clientData, 'bg-primary');
                     }
 
+                    // 3. Dados do Contexto PHP (Novo)
+                    if (raw.serverContext) {
+                        // Identificação Básica
+                        if (raw.serverContext.basicInfo) {
+                            const basicArray = Object.entries(raw.serverContext.basicInfo).map(([key, value]) => ({ label: key, value: value }));
+                            display.innerHTML += createCard('📍 Identificação Básica (PHP)', basicArray, 'bg-info');
+                        }
+                        
+                        // Headers
+                        if (raw.serverContext.headers) {
+                            const headersArray = Object.entries(raw.serverContext.headers).map(([key, value]) => ({ label: key, value: value }));
+                            display.innerHTML += createCard('📨 Cabeçalhos da Requisição (Headers)', headersArray, 'bg-secondary');
+                        }
+                    }
+
                     modal.show();
                 } catch (e) {
                     console.error(e);

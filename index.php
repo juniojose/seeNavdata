@@ -9,7 +9,7 @@
         body { background-color: #f8f9fa; padding-top: 20px; }
         .card { margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: none; }
         .card-header { background-color: #0d6efd; color: white; font-weight: bold; }
-        .card-header.geo { background-color: #198754; } /* Cor verde para Geo */
+        .card-header.geo { background-color: #198754; }
         .table-hover tbody tr:hover { background-color: #f1f1f1; }
         pre { background: #2d2d2d; color: #f8f8f2; padding: 10px; border-radius: 5px; max-height: 200px; overflow-y: auto; }
         .info-value { word-break: break-all; }
@@ -18,14 +18,11 @@
 <body>
 
 <?php
-// --- Lógica de Geolocalização (Server-Side) ---
-
+// --- 1. Lógica de Geolocalização e IP (Server-Side) ---
 function getUserIP() {
-    // Prioriza headers de proxy confiáveis para pegar o IP real
     if (!empty($_SERVER['HTTP_X_REAL_IP'])) return $_SERVER['HTTP_X_REAL_IP'];
     if (!empty($_SERVER['HTTP_CLIENT_IP'])) return $_SERVER['HTTP_CLIENT_IP'];
     if (!empty($_SERVER['HTTP_X_FORWARDED_FOR'])) {
-        // Pode retornar lista de IPs, pega o primeiro
         $ipList = explode(',', $_SERVER['HTTP_X_FORWARDED_FOR']);
         return trim($ipList[0]);
     }
@@ -33,11 +30,36 @@ function getUserIP() {
 }
 
 $userIP = getUserIP();
-// Timeout curto para não travar o carregamento da página se a API demorar
 $context = stream_context_create(['http' => ['timeout' => 3]]); 
 $geoApiUrl = "http://ip-api.com/json/{$userIP}?lang=pt-BR&fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,query,mobile,proxy,hosting";
 $geoJson = @file_get_contents($geoApiUrl, false, $context);
 $geoData = $geoJson ? json_decode($geoJson, true) : null;
+
+// --- 2. Coleta de Headers e Dados do Servidor ---
+$headers = function_exists('getallheaders') ? getallheaders() : [];
+if (empty($headers)) {
+    foreach ($_SERVER as $name => $value) {
+        if (substr($name, 0, 5) == 'HTTP_') {
+            $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
+        }
+    }
+}
+
+// Identificação Básica PHP
+$serverBasicInfo = [
+    'Endereço IP (Remoto)' => $_SERVER['REMOTE_ADDR'] ?? 'N/A',
+    'Porta Remota' => $_SERVER['REMOTE_PORT'] ?? 'N/A',
+    'Método de Requisição' => $_SERVER['REQUEST_METHOD'] ?? 'N/A',
+    'Protocolo' => $_SERVER['SERVER_PROTOCOL'] ?? 'N/A',
+    'User Agent' => $_SERVER['HTTP_USER_AGENT'] ?? 'N/A'
+];
+
+// Pacote completo de dados do PHP para enviar ao JS
+$phpContextData = [
+    'basicInfo' => $serverBasicInfo,
+    'headers' => $headers,
+    'rawServer' => $_SERVER // Opcional, se quiser salvar tudo mesmo
+];
 ?>
 
 <div class="container">
@@ -88,11 +110,9 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
                 <div class="card-body p-0">
                     <table class="table table-striped table-hover mb-0">
                         <tbody>
-                            <tr><th>Endereço IP (Remoto)</th><td class="info-value"><?php echo $_SERVER['REMOTE_ADDR'] ?? 'N/A'; ?></td></tr>
-                            <tr><th>Porta Remota</th><td class="info-value"><?php echo $_SERVER['REMOTE_PORT'] ?? 'N/A'; ?></td></tr>
-                            <tr><th>Método de Requisição</th><td class="info-value"><span class="badge bg-success"><?php echo $_SERVER['REQUEST_METHOD'] ?? 'N/A'; ?></span></td></tr>
-                            <tr><th>Protocolo</th><td class="info-value"><?php echo $_SERVER['SERVER_PROTOCOL'] ?? 'N/A'; ?></td></tr>
-                            <tr><th>User Agent</th><td class="info-value small"><?php echo $_SERVER['HTTP_USER_AGENT'] ?? 'N/A'; ?></td></tr>
+                            <?php foreach ($serverBasicInfo as $key => $value): ?>
+                                <tr><th><?php echo htmlspecialchars($key); ?></th><td class="info-value"><?php echo ($key == 'Método de Requisição') ? "<span class='badge bg-success'>$value</span>" : htmlspecialchars($value); ?></td></tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
@@ -134,16 +154,7 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
                     <table class="table table-sm table-striped mb-0">
                         <thead><tr><th>Chave</th><th>Valor</th></tr></thead>
                         <tbody>
-                            <?php
-                            $headers = function_exists('getallheaders') ? getallheaders() : [];
-                            if (empty($headers)) {
-                                foreach ($_SERVER as $name => $value) {
-                                    if (substr($name, 0, 5) == 'HTTP_') {
-                                        $headers[str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($name, 5)))))] = $value;
-                                    }
-                                }
-                            }
-                            foreach ($headers as $key => $value): ?>
+                            <?php foreach ($headers as $key => $value): ?>
                                 <tr><td><?php echo htmlspecialchars($key); ?></td><td class="info-value small"><?php echo htmlspecialchars($value); ?></td></tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -183,7 +194,6 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             ctx.fillStyle = "rgba(102, 204, 0, 0.7)";
             ctx.fillText(txt, 4, 17);
             
-            // Gerar hash simples da string base64 (CRC like)
             var str = canvas.toDataURL();
             var hash = 0;
             if (str.length === 0) return 'N/A';
@@ -192,7 +202,7 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
                 hash = ((hash << 5) - hash) + char;
                 hash = hash & hash;
             }
-            return hash.toString(16); // Hex
+            return hash.toString(16);
         } catch(e) { return "Erro: " + e.message; }
     }
 
@@ -237,7 +247,7 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             { label: "Canvas Hash (Assinatura)", value: getCanvasFingerprint() }
         ];
 
-        // Renderizar Tabela JS (Básico)
+        // Renderizar Tabela JS
         const tbodyJS = document.querySelector("#js-data-table tbody");
         tbodyJS.innerHTML = "";
         jsData.forEach(item => {
@@ -255,20 +265,25 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             tbodyFP.appendChild(tr);
         });
 
-        // Passar dados PHP (Geo) para JS
+        // --- PREPARAÇÃO DE DADOS PARA ENVIO ---
+        
+        // 1. Dados PHP (Injetados via PHP)
         const serverGeoData = <?php echo json_encode($geoData); ?>;
+        const serverContextData = <?php echo json_encode($phpContextData); ?>; // Agora inclui Headers e Server Vars
 
-        // --- AUTOSAVE: Salvar dados no banco automaticamente ---
+        // 2. Dados Combinados do Cliente
         const allClientDataForSave = jsData.concat(fpData);
+
+        // --- AUTOSAVE: Enviar TUDO para o banco ---
         fetch('save_data.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 clientData: allClientDataForSave, 
-                geoData: serverGeoData 
+                geoData: serverGeoData,
+                serverContext: serverContextData // Enviando o contexto PHP completo
             })
-        }).then(res => console.log("Dados de acesso registrados.")).catch(err => console.error("Erro no autosave:", err));
-        // -------------------------------------------------------
+        }).then(res => console.log("Dados completos registrados.")).catch(err => console.error("Erro no autosave:", err));
 
         // Lógica de Envio de E-mail
         const btnSend = document.getElementById('btn-send-email');
@@ -279,15 +294,13 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
             btnSend.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Enviando...';
             statusDiv.innerHTML = '';
 
-            // Combinar todos os dados de cliente
-            const allClientData = jsData.concat(fpData);
-
             fetch('send_mail.php', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
-                    clientData: allClientData, // Envia JS Básico + Fingerprint juntos
-                    geoData: serverGeoData 
+                    clientData: allClientDataForSave,
+                    geoData: serverGeoData
+                    // Nota: O e-mail já pega os dados do servidor no momento do envio, então não precisamos enviar o serverContext para o e-mail, apenas para o banco.
                 })
             })
             .then(response => response.json())
