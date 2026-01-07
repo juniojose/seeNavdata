@@ -246,7 +246,8 @@ $phpContextData = [
             { label: "Cookies Ativados", value: navigator.cookieEnabled ? "Sim" : "Não" },
             { label: "Memória do Dispositivo (aprox.)", value: navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Não disponível" },
             { label: "Cores do Sistema", value: window.matchMedia('(prefers-color-scheme: dark)').matches ? "Dark Mode" : "Light Mode" },
-            { label: "Conexão (Network API)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" },
+            { label: "Conexão (Velocidade)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" },
+            { label: "Conexão (Tipo Real)", value: (navigator.connection && navigator.connection.type) ? navigator.connection.type : "Oculto/N/A" },
             // Novos Indicadores de Bot
             { label: "Automação (Webdriver)", value: navigator.webdriver ? "DETECTADO 🤖" : "False" },
             { label: "Bateria (Nível)", value: batteryData.level },
