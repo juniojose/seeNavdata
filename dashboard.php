@@ -106,6 +106,7 @@ $results = $stmtList->execute();
                         <th>Plataforma</th>
                         <th>Canvas Hash</th>
                         <th>Status</th>
+                        <th>Ações</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -115,6 +116,8 @@ $results = $stmtList->execute();
                             ? '<span class="badge bg-danger">Suspeito</span>' 
                             : '<span class="badge bg-success">Normal</span>';
                         $rowClass = $isSusp ? 'suspicious-row' : '';
+                        // Escapar o JSON para uso no data-attribute
+                        $safeRawData = htmlspecialchars($row['raw_data'], ENT_QUOTES, 'UTF-8');
                     ?>
                     <tr class="<?php echo $rowClass; ?>">
                         <td><?php echo date('d/m H:i', strtotime($row['created_at'])); ?></td>
@@ -127,6 +130,11 @@ $results = $stmtList->execute();
                         <td class="small"><?php echo $row['platform']; ?></td>
                         <td class="small text-monospace"><?php echo substr($row['canvas_hash'], 0, 10); ?>...</td>
                         <td><?php echo $statusBadge; ?></td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary btn-view-raw" data-raw='<?php echo $safeRawData; ?>'>
+                                👁️ Ver Tudo
+                            </button>
+                        </td>
                     </tr>
                     <?php endwhile; ?>
                 </tbody>
@@ -134,6 +142,46 @@ $results = $stmtList->execute();
         </div>
     </div>
 </div>
+
+<!-- Modal para Visualização de Dados Brutos -->
+<div class="modal fade" id="rawUpdateModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title">🔍 Detalhes Completos da Extração</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Abaixo estão todos os dados capturados (Client-Side e Server-Side) em formato JSON.</p>
+                <pre id="raw-json-display" class="bg-light p-3 border rounded" style="max-height: 500px; overflow-y: auto; font-size: 0.85rem;"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = new bootstrap.Modal(document.getElementById('rawUpdateModal'));
+        const display = document.getElementById('raw-json-display');
+
+        document.querySelectorAll('.btn-view-raw').forEach(btn => {
+            btn.addEventListener('click', function() {
+                try {
+                    const rawData = JSON.parse(this.getAttribute('data-raw'));
+                    // Formatar JSON com 4 espaços de indentação
+                    display.textContent = JSON.stringify(rawData, null, 4);
+                    modal.show();
+                } catch (e) {
+                    alert('Erro ao processar dados: ' + e.message);
+                }
+            });
+        });
+    });
+</script>
 
 </body>
 </html>
