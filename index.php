@@ -220,7 +220,19 @@ $phpContextData = [
         } catch(e) { return { vendor: 'Erro', renderer: e.message }; }
     }
 
-    document.addEventListener("DOMContentLoaded", function() {
+    document.addEventListener("DOMContentLoaded", async function() {
+        // --- Coleta de Bateria (Async) ---
+        let batteryData = { level: 'N/A', charging: 'N/A' };
+        if (navigator.getBattery) {
+            try {
+                const batt = await navigator.getBattery();
+                batteryData = { 
+                    level: Math.round(batt.level * 100) + "%", 
+                    charging: batt.charging ? "Sim" : "Não"
+                };
+            } catch(e) { console.log("Erro bateria:", e); }
+        }
+
         // Dados do Navegador
         const jsData = [
             { label: "Resolução da Tela", value: window.screen.width + " x " + window.screen.height },
@@ -234,8 +246,13 @@ $phpContextData = [
             { label: "Cookies Ativados", value: navigator.cookieEnabled ? "Sim" : "Não" },
             { label: "Memória do Dispositivo (aprox.)", value: navigator.deviceMemory ? navigator.deviceMemory + " GB" : "Não disponível" },
             { label: "Cores do Sistema", value: window.matchMedia('(prefers-color-scheme: dark)').matches ? "Dark Mode" : "Light Mode" },
-            { label: "Conexão (Network API)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" }
+            { label: "Conexão (Network API)", value: navigator.connection ? navigator.connection.effectiveType : "Não suportado" },
+            // Novos Indicadores de Bot
+            { label: "Automação (Webdriver)", value: navigator.webdriver ? "DETECTADO 🤖" : "False" },
+            { label: "Bateria (Nível)", value: batteryData.level },
+            { label: "Bateria (Carregando)", value: batteryData.charging }
         ];
+
 
         // Dados de Fingerprinting
         const webGL = getWebGLInfo();
