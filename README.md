@@ -1,57 +1,62 @@
 # seeNavdata 🚀
 
-Uma ferramenta de diagnóstico leve e moderna, desenvolvida em **PHP 8.2**, projetada para capturar e exibir todas as informações públicas disponíveis de uma conexão web, tanto do lado do servidor (Server-Side) quanto do cliente (Client-Side).
+A lightweight and modern diagnostic tool developed in **PHP 8.2**, designed to capture and display all publicly available information from a web connection, both from the server side (Server-Side) and the client side (Client-Side).
 
-## 📋 Sobre o Projeto
+## 📋 About the Project
 
-O **seeNavdata** foi criado para auxiliar desenvolvedores a entenderem quais dados estão acessíveis durante uma requisição HTTP. É uma ferramenta essencial para depuração de headers, validação de variáveis de ambiente e mapeamento de capacidades do navegador, facilitando a construção de lógicas de validação e segurança em outras aplicações.
+**seeNavdata** was created to help developers understand which data is accessible during an HTTP request. It is an essential tool for debugging headers, validating environment variables, and mapping browser capabilities, making it easier to build validation and security logic in other applications.
 
-## ✨ Funcionalidades
+## ✨ Features
 
-### 🖥️ Lado do Servidor (PHP)
-- **Identificação de Conexão:** Endereço IP real, porta remota e protocolo.
-- **Requisição HTTP:** Método utilizado (GET, POST, etc.) e User-Agent bruto.
-- **Cabeçalhos (Headers):** Listagem completa de todos os headers HTTP enviados pelo navegador.
-- **Variáveis de Ambiente:** Dump formatado da superglobal `$_SERVER`.
-- **Envio de Relatório:** Funcionalidade de envio dos dados coletados diretamente para um e-mail configurado via SMTP (PHPMailer).
+### 🖥️ Server-Side (PHP)
+- **Connection Identification:** Real IP address, remote port, and protocol.
+- **HTTP Request:** Method used (GET, POST, etc.) and raw User-Agent.
+- **Headers:** Complete listing of all HTTP headers sent by the browser.
+- **Environment Variables:** Formatted dump of the `$_SERVER` superglobal.
+- **Email Reporting:** Functionality to send collected data directly to a configured email via SMTP (PHPMailer).
+- **Automatic Geolocation:** Automatic IP lookup using the `ip-api.com` API to identify country, city, ISP, and more.
 
-### 📱 Lado do Cliente (JavaScript)
-- **Hardware & Tela:** Resolução total, área útil, profundidade de cor e pixel ratio.
-- **Localização & Idioma:** Fuso horário do sistema e idiomas preferenciais.
-- **Capacidades do Navegador:** Status de cookies, plataforma e motor do browser.
-- **Preferências:** Detecção de tema do sistema (Dark/Light Mode).
+### 📱 Client-Side (JavaScript)
+- **Hardware & Screen:** Total resolution, available area, color depth, and pixel ratio.
+- **Location & Language:** System timezone and preferred languages.
+- **Browser Capabilities:** Cookie status, platform, and browser engine.
+- **Preferences:** System theme detection (Dark/Light Mode).
+- **🕵️ Advanced Fingerprinting:**
+    - **Canvas Hash:** Unique digital signature based on GPU rendering.
+    - **WebGL Info:** Identification of the exact graphics card (GPU Vendor & Renderer).
+    - **Hardware Specs:** CPU core count and touch point support.
 
-## 🚀 Como Executar
+## 🚀 How to Run
 
-### Pré-requisitos
-- Servidor Web (Apache2 recomendado).
-- PHP 8.2 ou superior.
-- [Composer](https://getcomposer.org/) instalado.
+### Prerequisites
+- Web Server (Apache2 recommended).
+- PHP 8.2 or higher.
+- [Composer](https://getcomposer.org/) installed.
 
-### Instalação
-1. Clone este repositório para o diretório raiz do seu servidor (ex: `/var/www/html/`):
+### Installation
+1. Clone this repository to your server's root directory (e.g., `/var/www/html/`):
    ```bash
    git clone https://github.com/juniojose/seeNavdata.git
    ```
-2. Instale as dependências via Composer:
+2. Install dependencies via Composer:
    ```bash
    composer install
    ```
-3. Configure as credenciais de e-mail:
-   - Copie o arquivo de exemplo: `cp config.php.example config.php`
-   - Edite o `config.php` com suas configurações de servidor SMTP.
+3. Configure email credentials:
+   - Copy the example file: `cp config.php.example config.php`
+   - Edit `config.php` with your SMTP server settings.
 
-4. Acesse via navegador:
+4. Access via browser:
    ```
-   http://<domain>/seeNavdata
+   http://localhost/seeNavdata
    ```
 
-## 🛠️ Tecnologias Utilizadas
-- **PHP 8.2:** Processamento de dados do servidor.
-- **PHPMailer:** Biblioteca para envio de e-mails via SMTP.
-- **Bootstrap 5:** Interface responsiva e moderna.
-- **JavaScript (Vanilla):** Coleta de metadados do navegador e integração AJAX.
-- **Composer:** Gerenciamento de dependências.
+## 🛠️ Technologies Used
+- **PHP 8.2:** Server data processing.
+- **PHPMailer:** Library for sending emails via SMTP.
+- **Bootstrap 5:** Responsive and modern interface.
+- **JavaScript (Vanilla):** Browser metadata collection, Fingerprinting, and AJAX integration.
+- **Composer:** Dependency management.
 
 ---
-Desenvolvido para fins de diagnóstico e desenvolvimento de software.
+Developed for diagnostic and software development purposes.
