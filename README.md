@@ -25,12 +25,16 @@ A lightweight and modern diagnostic tool developed in **PHP 8.2**, designed to c
     - **Canvas Hash:** Unique digital signature based on GPU rendering.
     - **WebGL Info:** Identification of the exact graphics card (GPU Vendor & Renderer).
     - **Hardware Specs:** CPU core count and touch point support.
+- **📊 Analytics Dashboard:**
+    - **SQLite Database:** Automatic persistence of all access logs.
+    - **Bot Farm Detection:** Algorithmic identification of suspicious devices (e.g., Brazilian IP with Chinese timezone).
+    - **Visual Interface:** Filter logs by date range and view suspicious activity metrics.
 
 ## 🚀 How to Run
 
 ### Prerequisites
 - Web Server (Apache2 recommended).
-- PHP 8.2 or higher.
+- PHP 8.2 or higher + **php-sqlite3** extension.
 - [Composer](https://getcomposer.org/) installed.
 
 ### Installation
@@ -45,14 +49,20 @@ A lightweight and modern diagnostic tool developed in **PHP 8.2**, designed to c
 3. Configure email credentials:
    - Copy the example file: `cp config.php.example config.php`
    - Edit `config.php` with your SMTP server settings.
+4. Ensure write permissions for SQLite:
+   ```bash
+   # The web server needs write access to the directory to create/update the .db file
+   chown www-data:www-data /var/www/html/seeNavdata
+   chmod 775 /var/www/html/seeNavdata
+   ```
 
-4. Access via browser:
-   ```
-   http://localhost/seeNavdata
-   ```
+5. Access via browser:
+   - **Application:** `http://localhost/seeNavdata`
+   - **Dashboard:** `http://localhost/seeNavdata/dashboard.php`
 
 ## 🛠️ Technologies Used
 - **PHP 8.2:** Server data processing.
+- **SQLite3:** Serverless, self-contained database engine.
 - **PHPMailer:** Library for sending emails via SMTP.
 - **Bootstrap 5:** Responsive and modern interface.
 - **JavaScript (Vanilla):** Browser metadata collection, Fingerprinting, and AJAX integration.

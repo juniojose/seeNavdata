@@ -258,6 +258,18 @@ $geoData = $geoJson ? json_decode($geoJson, true) : null;
         // Passar dados PHP (Geo) para JS
         const serverGeoData = <?php echo json_encode($geoData); ?>;
 
+        // --- AUTOSAVE: Salvar dados no banco automaticamente ---
+        const allClientDataForSave = jsData.concat(fpData);
+        fetch('save_data.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                clientData: allClientDataForSave, 
+                geoData: serverGeoData 
+            })
+        }).then(res => console.log("Dados de acesso registrados.")).catch(err => console.error("Erro no autosave:", err));
+        // -------------------------------------------------------
+
         // Lógica de Envio de E-mail
         const btnSend = document.getElementById('btn-send-email');
         const statusDiv = document.getElementById('email-status');
