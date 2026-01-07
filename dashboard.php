@@ -83,7 +83,7 @@ $results = $stmtList->execute();
                     <h5 class="card-title text-danger">Suspeitas de Bot Farm 🤖</h5>
                     <h2 class="display-4 fw-bold text-danger"><?php echo $stats['suspicious']; ?></h2>
                     <p class="card-text text-muted">
-                        Critério: IP Brasil + Timezone China (Asia/Shanghai)
+                        Baseado em Heurística Avançada (Fuso, Bateria, Hardware, Automação)
                     </p>
                 </div>
             </div>
@@ -103,9 +103,8 @@ $results = $stmtList->execute();
                         <th>IP</th>
                         <th>País</th>
                         <th>Fuso (JS)</th>
-                        <th>Plataforma</th>
-                        <th>Canvas Hash</th>
                         <th>Status</th>
+                        <th>Motivos</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -116,20 +115,26 @@ $results = $stmtList->execute();
                             ? '<span class="badge bg-danger">Suspeito</span>' 
                             : '<span class="badge bg-success">Normal</span>';
                         $rowClass = $isSusp ? 'suspicious-row' : '';
-                        // Escapar o JSON para uso no data-attribute
+                        
+                        // Extrair motivos do JSON raw_data
+                        $rawArr = json_decode($row['raw_data'], true);
+                        $flags = $rawArr['suspicious_flags'] ?? [];
+                        $motivosHtml = '';
+                        foreach ($flags as $f) {
+                            $motivosHtml .= '<div class="small text-danger" style="font-size: 0.75rem;">• '.htmlspecialchars($f).'</div>';
+                        }
+
                         $safeRawData = htmlspecialchars($row['raw_data'], ENT_QUOTES, 'UTF-8');
                     ?>
                     <tr class="<?php echo $rowClass; ?>">
                         <td><?php echo date('d/m H:i', strtotime($row['created_at'])); ?></td>
                         <td><?php echo $row['ip_address']; ?></td>
-                        <td><?php echo $row['country_geo']; ?></td>
-                        <td>
+                        <td class="small"><?php echo $row['country_geo']; ?></td>
+                        <td class="small">
                             <?php echo $row['timezone_js']; ?>
-                            <?php if($row['timezone_js'] != $row['timezone_geo'] && $row['timezone_geo'] != 'N/A') echo '<br><small class="text-muted">IP: '.$row['timezone_geo'].'</small>'; ?>
                         </td>
-                        <td class="small"><?php echo $row['platform']; ?></td>
-                        <td class="small text-monospace" style="font-size: 0.8em; word-break: break-all;"><?php echo $row['canvas_hash']; ?></td>
                         <td><?php echo $statusBadge; ?></td>
+                        <td><?php echo $motivosHtml; ?></td>
                         <td>
                             <button class="btn btn-sm btn-outline-primary btn-view-raw" data-raw='<?php echo $safeRawData; ?>'>
                                 👁️ Ver Tudo
