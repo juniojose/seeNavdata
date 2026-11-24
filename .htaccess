@@ -1,0 +1,7 @@
+# O HTML traz o IP de quem pediu. O nginx na frente deste Apache
+# não guarda resposta com Cache-Control: no-store.
+<IfModule mod_headers.c>
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+    Header set Pragma "no-cache"
+    Header set X-LiteSpeed-Cache-Control "no-cache"
+</IfModule>

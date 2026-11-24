@@ -65,6 +65,8 @@ A lightweight and modern diagnostic tool developed in **PHP 8.2**, designed to c
    - **Application:** `http://localhost/seeNavdata`
    - **Dashboard:** `http://localhost/seeNavdata/dashboard.php`
 
+The page prints the IP of the request, so `.htaccess` sends `Cache-Control: no-store`. On talkei.me the files are served by Apache 2.4; an nginx cache in front of that Apache stores a response that does not say `no-store`. After publishing, drop the old copy with `curl -X PURGE https://talkei.me/seeNavdata/`.
+
 ## 🛠️ Technologies Used
 - **PHP 8.2:** Server data processing.
 - **SQLite3:** Serverless, self-contained database engine.
